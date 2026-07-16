@@ -42,7 +42,6 @@ class SmileDetectionThreshold extends DetectionThreshold {
     return result;
   }
 
-  @override
   factory SmileDetectionThreshold.fromMap(Map<String, dynamic> map) {
     return SmileDetectionThreshold(
       probability: map['probability']?.toDouble() ?? 0.0,

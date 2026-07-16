@@ -1,3 +1,16 @@
+## 0.0.1+6
+
+Updates:
+
+- Flutter 3.27+/3.44 compatibility: `Color.value` -> `toARGB32()`; removed invalid `@override`.
+- Updated dependency versions:
+  - `animate_do: ^3.3.4` -> `animate_do: ^5.1.0`
+  - `camera: ^0.11.0+1` -> `camera: ^0.12.0`
+  - `google_mlkit_face_detection: ^0.11.0` -> `google_mlkit_face_detection: ^0.14.0`
+  - `flutter_lints: ^4.0.0` -> `flutter_lints: ^6.0.0`
+- Minimum iOS deployment target is now 15.5 (required by google_mlkit_commons 0.12).
+- Example Android toolchain updated to Gradle 9.1 / AGP 9 / Kotlin 2.3 for Flutter 3.44 (JDK 21).
+
 ## 0.0.1+5
 
 Updates:
