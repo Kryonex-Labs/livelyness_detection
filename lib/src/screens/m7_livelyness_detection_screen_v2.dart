@@ -136,7 +136,9 @@ class _LivelynessDetectionScreenAndroidState
           () => _isProcessing = false,
         );
       }
-      debugPrint("...sending image resulted error $error");
+      if (kDebugMode) {
+        debugPrint("...sending image resulted error $error");
+      }
     }
   }
 
@@ -147,56 +149,6 @@ class _LivelynessDetectionScreenAndroidState
         return;
       }
       final Face firstFace = faces.first;
-      final landmarks = firstFace.landmarks;
-      // Get landmark positions for relevant facial features
-      final Point<int>? leftEye = landmarks[FaceLandmarkType.leftEye]?.position;
-      final Point<int>? rightEye =
-          landmarks[FaceLandmarkType.rightEye]?.position;
-      final Point<int>? leftCheek =
-          landmarks[FaceLandmarkType.leftCheek]?.position;
-      final Point<int>? rightCheek =
-          landmarks[FaceLandmarkType.rightCheek]?.position;
-      final Point<int>? leftEar = landmarks[FaceLandmarkType.leftEar]?.position;
-      final Point<int>? rightEar =
-          landmarks[FaceLandmarkType.rightEar]?.position;
-      final Point<int>? leftMouth =
-          landmarks[FaceLandmarkType.leftMouth]?.position;
-      final Point<int>? rightMouth =
-          landmarks[FaceLandmarkType.rightMouth]?.position;
-
-      // Calculate symmetry values based on corresponding landmark positions
-      final Map<String, double> symmetry = {};
-      final eyeSymmetry = calculateSymmetry(
-        leftEye,
-        rightEye,
-      );
-      symmetry['eyeSymmetry'] = eyeSymmetry;
-
-      final cheekSymmetry = calculateSymmetry(
-        leftCheek,
-        rightCheek,
-      );
-      symmetry['cheekSymmetry'] = cheekSymmetry;
-
-      final earSymmetry = calculateSymmetry(
-        leftEar,
-        rightEar,
-      );
-      symmetry['earSymmetry'] = earSymmetry;
-
-      final mouthSymmetry = calculateSymmetry(
-        leftMouth,
-        rightMouth,
-      );
-      symmetry['mouthSymmetry'] = mouthSymmetry;
-      double total = 0.0;
-      symmetry.forEach((key, value) {
-        total += value;
-      });
-      final double average = total / symmetry.length;
-      if (kDebugMode) {
-        print("Face Symmetry: $average");
-      }
       if (_isProcessingStep &&
           _steps[_stepsKey.currentState?.currentIndex ?? 0].step ==
               LivelynessStep.blink) {
@@ -520,18 +472,5 @@ class _LivelynessDetectionScreenAndroidState
         ),
       ],
     );
-  }
-
-  double calculateSymmetry(
-      Point<int>? leftPosition, Point<int>? rightPosition) {
-    if (leftPosition != null && rightPosition != null) {
-      final double dx = (rightPosition.x - leftPosition.x).abs().toDouble();
-      final double dy = (rightPosition.y - leftPosition.y).abs().toDouble();
-      final distance = Offset(dx, dy).distance;
-
-      return distance;
-    }
-
-    return 0.0;
   }
 }
