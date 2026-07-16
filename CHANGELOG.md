@@ -1,3 +1,14 @@
+## 0.0.1+6
+
+Updates:
+
+- Flutter 3.27+/3.44 compatibility: `Color.value` -> `toARGB32()`; removed invalid `@override`.
+- Updated dependency versions:
+  - `animate_do: ^3.3.4` -> `animate_do: ^5.1.0`
+  - `camera: ^0.11.0+1` -> `camera: ^0.12.0`
+  - `google_mlkit_face_detection: ^0.11.0` -> `google_mlkit_face_detection: ^0.14.0`
+  - `flutter_lints: ^4.0.0` -> `flutter_lints: ^6.0.0`
+
 ## 0.0.1+5
 
 Updates:
