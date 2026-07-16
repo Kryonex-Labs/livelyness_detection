@@ -13,15 +13,16 @@
   - [Native Setup](#flutterSetupNativeSetup)
     - [iOS](#flutterSetupNativeiOS)
     - [Android](#flutterSetupNativeAndroid)
+- [Privacy & compliance](#privacy)
 - [Contributors](#contributors)
 
 <a name="whatIsLivelyness"></a>
 
 ## What is the Livelyness Detection?
 
-Liveness detection for face recognition in biometrics is a technique where an algorithm detects if the person in front of the camera is alive and real. The algorithm is able to recognize a live person from presentation attacks - where a bad actor, or fraud perpetrator, uses someone else's physical characteristics or biometric data (known as "spoofs") for impersonation.
+This package runs a short sequence of **active liveness challenges** — blink, turn left/right, smile — detected **on-device** via Google ML Kit face detection, and captures a selfie once the challenge steps pass. All processing stays on the device; no images or biometric data are sent anywhere by this package.
 
-`Spoofing` attempts using printed photos, recordings, deep fake pictures, and 3D masks poses a serious threat. `Facial Liveness Detection` incorporates specialized features to identify biometric spoofing attacks, which could be an imitation emulating a person’s unique biometrics scanned through the biometric detector to deceive or bypass the identification and authentication steps provided by the system. Even though face recognition can reliably answer the question, “Is this the right person?” but not the question, “Is this a live person?” This is where liveness detection technology plays a significant role in fraud detection and mitigation. Face biometric matching must be able to detect spoofs in order to be trusted, and to maintain the integrity of biometric data.
+> **⚠️ This is active challenge-response, NOT certified anti-spoofing.** The package does **not** implement [ISO/IEC 30107](https://www.iso.org/standard/79520.html) presentation-attack detection (PAD). It performs no texture, depth, motion, or reflection analysis, so a **printed photo, screen replay, recorded video, or 3D mask can defeat the gesture challenge.** Do **not** use it as the sole control for KYC, identity verification, payments, or any security-critical authentication. Pair it with a dedicated PAD/anti-spoofing solution and your own server-side risk checks, and obtain the user's consent before capture (see [Privacy & compliance](#privacy)).
 
 <!-- <iframe src="https://embed.lottiefiles.com/animation/16432" width="100%" aspect-ratio="auto"></iframe> -->
 
@@ -80,9 +81,9 @@ Next comes the native setup on both android and iOS
 ```xml
   <key>NSCameraUsageDescription</key>
   <string>Camera Access for Scanning</string>
-  <key>NSMicrophoneUsageDescription</key>
-  <string>Microphone for playing instructions audio.</string>
 ```
+
+> Only the camera permission is required — this package neither records nor plays audio (`enableAudio: false`), so do **not** add `NSMicrophoneUsageDescription`. Declaring an unused microphone purpose string can cause App Store review rejection (Guideline 5.1.1).
 
 4. Open the `ios/Runner/Podfile` and uncomment the second line.
 
@@ -142,6 +143,25 @@ A call to a single line function will return a temporary path to the captured im
 ![The example app running in Andriod](https://github.com/phil10xs/livelyness_detection/blob/develop/lib/src/assets/demo/livelyness_detection_android.gif?raw=true)
 
 
+
+<a name="privacy"></a>
+
+## Privacy & compliance
+
+This package captures **biometric data** (a face selfie and derived facial landmarks) — a special/sensitive data category under most privacy laws. Read this before shipping to production.
+
+**What this package does**
+
+- **On-device only.** Face detection runs locally via Google ML Kit; the package makes **no network calls** and transmits no images or biometric data.
+- Uses [Google ML Kit Face Detection](https://developers.google.com/ml-kit/vision/face-detection) — your app must comply with Google's ML Kit terms and disclose its use.
+- The captured selfie is written **unencrypted** to the OS temporary directory and returned as a file path. **The package never deletes it** — the file persists until you remove it or the OS evicts the cache.
+
+**What you (the consuming app) are responsible for**
+
+- **Obtain consent before capture.** This package does not collect consent and its info screen is *instructional only* — **not** lawful-basis consent. You must establish a lawful basis: GDPR Art. 9(2)(a) *explicit* consent, Illinois BIPA §15(b) informed *written* release, China PIPL *separate* consent, India DPDP notice+consent, etc.
+- **Delete the captured image** as soon as it is no longer needed, and define a retention/destruction schedule (BIPA §15(a); GDPR storage limitation, Art. 5(1)(e)).
+- **Do not treat this as anti-spoofing/PAD.** A capture where `didCaptureAutomatically == false` (the manual button shown after a timeout) has passed **no** liveness check — do not accept it as verified.
+- If you deploy in the EU for identity purposes, review your EU AI Act obligations (transparency, robustness, human oversight).
 
 ## Contributors
 
