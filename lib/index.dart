@@ -16,5 +16,3 @@ export 'package:rxdart/rxdart.dart';
 export 'package:uuid/uuid.dart';
 
 export './src/index.dart';
-export 'livelyness_detection_method_channel.dart';
-export 'livelyness_detection_platform_interface.dart';

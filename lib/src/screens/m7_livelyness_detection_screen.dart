@@ -364,28 +364,6 @@ class _MLivelyness7DetectionScreenState
     if (_isProcessingStep) {
       return;
     }
-    final faceWidth = face.boundingBox.width;
-    final Point<int>? leftEyePosition = face
-        .getContour(
-          FaceContourType.leftEye,
-        )
-        ?.points
-        .elementAt(8);
-    final Point<int>? rightEyePosition = face
-        .getContour(
-          FaceContourType.rightEye,
-        )
-        ?.points
-        .elementAt(0);
-    if (leftEyePosition != null && rightEyePosition != null) {
-      final goldenRatio = (faceWidth /
-          leftEyePosition.distanceTo(
-            rightEyePosition,
-          ));
-      if (kDebugMode) {
-        print("Golden Ratio: $goldenRatio");
-      }
-    }
     switch (step) {
       case LivelynessStep.blink:
         final BlinkDetectionThreshold? blinkThreshold =
@@ -420,8 +398,11 @@ class _MLivelyness7DetectionScreenState
             LivelynessDetection.instance.thresholdConfig.firstWhereOrNull(
           (p0) => p0 is HeadTurnDetectionThreshold,
         ) as HeadTurnDetectionThreshold?;
-        if ((face.headEulerAngleY ?? 0) >
-            (headTurnThreshold?.rotationAngle ?? -50)) {
+        // turnRight: yaw is negative when the head turns right, so require the
+        // angle to be MORE negative than the (magnitude of the) threshold.
+        // Using `>` here made a forward-facing head (yaw ~0) pass instantly.
+        if ((face.headEulerAngleY ?? 0) <
+            -((headTurnThreshold?.rotationAngle ?? 50).abs())) {
           _startProcessing();
           await _completeStep(step: step);
         }
