@@ -10,7 +10,7 @@ environment:
   flutter: '>=1.17.0'
 
 dependencies:
-  animate_do: ^3.3.4
+  animate_do: ^5.1.0
   camera: ^0.11.0+1
   camerawesome: ^2.1.0
   collection: ^1.17.0
@@ -26,7 +26,7 @@ dependencies:
   uuid: ^4.4.2
 
 dev_dependencies:
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
 
