@@ -109,7 +109,7 @@ The returned `CapturedImage` contains:
 
 ### Demo
 
-<img width="480" alt="Livelyness Detection Demo" src="https://github.com/user-attachments/assets/c2b967ea-a5bd-467c-98e3-2b1676abac14" />
+<img width="320" alt="Livelyness Detection Demo" src="https://github.com/Kryonex-Labs/livelyness_detection/raw/develop/lib/src/assets/demo/liveliness_example.gif" />
 
 ## Configuration
 
