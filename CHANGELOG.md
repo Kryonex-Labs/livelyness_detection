@@ -1,3 +1,12 @@
+## 2.0.1
+
+### Docs
+
+- Rewrote README with full configuration reference (all `DetectionConfig`, `DetectionThreshold`, `OvalConfig`, `CameraConfig`, `StepCardStyle`, `InfoScreenConfig` parameters documented).
+- Updated code example to v2 API (`LivelynessDetection.detect()`).
+- Replaced broken Lottie iframes with clean platform support table.
+- New demo gif.
+
 ## 2.0.0
 
 ### Breaking changes
