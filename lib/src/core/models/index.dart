@@ -1,5 +1,8 @@
 export './face_detection_model.dart';
-export 'caputred_image.dart';
+export 'camera_config.dart';
+export 'captured_image.dart';
 export 'detection_config.dart';
 export 'detection_threshold.dart';
+export 'info_screen_config.dart';
 export 'livelyness_step_item.dart';
+export 'oval_config.dart';

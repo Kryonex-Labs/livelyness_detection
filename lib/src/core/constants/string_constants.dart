@@ -6,7 +6,7 @@ class StringConstants {
 }
 
 class _LabelStrings {
-  final String livelyNessDetection = "Livelyness Detection";
+  final String livelyNessDetection = "Verify it's really you";
   final String goodLighting = "Good Lighting";
   final String lookStraight = "Look Straight";
   final String goodLightingSubText =
@@ -14,9 +14,9 @@ class _LabelStrings {
   final String lookStraightSubText =
       "Hold your phone at eye level and look straight to the camera";
   final String infoSubText =
-      "We use this selfie to compare with the mandatory photo(s) on the next step";
+      "Follow the on-screen prompts to confirm you're a real, live person.";
 }
 
 class _ButtonStrings {
-  final String start = "Start!!!";
+  final String start = "Begin Verification";
 }

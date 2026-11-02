@@ -42,7 +42,7 @@ class LivelynessStepItem {
     }
     result.addAll({'isCompleted': isCompleted});
     if (detectionColor != null) {
-      result.addAll({'detectionColor': detectionColor!.value});
+      result.addAll({'detectionColor': detectionColor!.toARGB32()});
     }
 
     return result;
