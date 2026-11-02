@@ -1,33 +1,48 @@
 //sky_engine/lib/ui/painting.dart
 import 'package:livelyness_detection/index.dart';
-import 'package:livelyness_detection/livelyness_detection.dart';
 
 class FaceDetectorPainter extends CustomPainter {
   FaceDetectorPainter(
     this.face,
     this.absoluteImageSize,
-    this.rotation,
-  );
+    this.rotation, {
+    this.lineColor = const Color(0xFFEAEAEA),
+    this.dotColor = const Color(0xFFEAEAEA),
+    this.lineWidth = 1.6,
+    this.dotRadius = 2.0,
+    this.displayLines = true,
+    this.displayDots = true,
+  });
 
   final Face face;
   final Size absoluteImageSize;
   final InputImageRotation rotation;
+  final Color lineColor;
+  final Color dotColor;
+  final double lineWidth;
+  final double dotRadius;
+  final bool displayLines;
+  final bool displayDots;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
+    final Paint linePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0
-      ..color = LivelynessDetection.instance.contourLineColor ??
-          const Color(0xffab48e0);
+      ..strokeWidth = lineWidth
+      ..color = lineColor;
+
+    final Paint dotPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = dotColor;
 
     void paintContour(FaceContourType type) {
       final faceContour = face.contours[type];
-      if (faceContour?.points != null) {
-        for (var i = 0; i < faceContour!.points.length; i++) {
-          final Point<int> p1 = faceContour.points[i];
-          if (i + 1 < faceContour.points.length) {
-            final Point<int> p2 = faceContour.points[i + 1];
+      if (faceContour != null) {
+        final points = faceContour.points;
+        for (var i = 0; displayLines && i < points.length; i++) {
+          final Point<int> p1 = points[i];
+          if (i + 1 < points.length) {
+            final Point<int> p2 = points[i + 1];
             canvas.drawLine(
               Offset(
                 MathHelper.instance.translateX(
@@ -57,11 +72,11 @@ class FaceDetectorPainter extends CustomPainter {
                   absoluteImageSize,
                 ),
               ),
-              paint,
+              linePaint,
             );
           }
         }
-        for (final Point point in faceContour.points) {
+        for (final Point point in displayDots ? points : const <Point<int>>[]) {
           canvas.drawCircle(
             Offset(
               MathHelper.instance.translateX(
@@ -77,8 +92,8 @@ class FaceDetectorPainter extends CustomPainter {
                 absoluteImageSize,
               ),
             ),
-            1,
-            paint,
+            dotRadius,
+            dotPaint,
           );
         }
       }

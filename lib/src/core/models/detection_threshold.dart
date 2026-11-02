@@ -20,8 +20,8 @@ class SmileDetectionThreshold extends DetectionThreshold {
     this.probability = 0.75,
   }) : super() {
     assert(
-      probability < 1.0 || probability > 0.0,
-      "Smile Probability has to be between 1.0 and 0.0",
+      probability >= 0.0 && probability <= 1.0,
+      "Smile Probability has to be between 0.0 and 1.0",
     );
   }
 
@@ -42,7 +42,6 @@ class SmileDetectionThreshold extends DetectionThreshold {
     return result;
   }
 
-  @override
   factory SmileDetectionThreshold.fromMap(Map<String, dynamic> map) {
     return SmileDetectionThreshold(
       probability: map['probability']?.toDouble() ?? 0.0,
@@ -94,12 +93,12 @@ class BlinkDetectionThreshold extends DetectionThreshold {
     this.rightEyeProbability = 0.25,
   }) : super() {
     assert(
-      leftEyeProbability < 1.0 || leftEyeProbability > 0.0,
-      "Left Probability has to be between 1.0 and 0.0",
+      leftEyeProbability >= 0.0 && leftEyeProbability <= 1.0,
+      "Left Probability has to be between 0.0 and 1.0",
     );
     assert(
-      rightEyeProbability < 1.0 || rightEyeProbability > 0.0,
-      "Right Probability has to be between 1.0 and 0.0",
+      rightEyeProbability >= 0.0 && rightEyeProbability <= 1.0,
+      "Right Probability has to be between 0.0 and 1.0",
     );
   }
 
@@ -163,17 +162,22 @@ class BlinkDetectionThreshold extends DetectionThreshold {
 
 /// Configure the Head Turn threshold that will be used while verifying head turn towards left/right.
 class HeadTurnDetectionThreshold extends DetectionThreshold {
-  /// Threshold of head angle at which the head turn will be considered as verified
-  /// A `Positive` Value will be considered as detection on the `Left` size and
-  /// A `Negative` Value will be considered as detection on the `Right` size.
-  /// Default Value: `45`, i.e., the head turn will be checked on the `Left Side`
+  /// Magnitude (in degrees) of head yaw at which a head turn is accepted.
+  ///
+  /// The same magnitude is used for both directions: turn-left fires when the
+  /// yaw angle rises above `+rotationAngle`, turn-right when it drops below
+  /// `-rotationAngle`. Always pass a positive value — the sign is applied
+  /// internally per step.
+  ///
+  /// Left/right are defined relative to the front-facing camera.
+  /// Default Value: `45`.
   final double rotationAngle;
 
   HeadTurnDetectionThreshold({
     this.rotationAngle = 45.0,
   }) : super() {
     assert(
-      rotationAngle > 180.0 || rotationAngle > 0.0,
+      rotationAngle > 0.0 && rotationAngle < 180.0,
       "To detect the livelyness of the face, it has to be properly visible in the camera. The threshold angle should be more than 0.0 degrees and less than 180 degrees.",
     );
   }
@@ -197,7 +201,9 @@ class HeadTurnDetectionThreshold extends DetectionThreshold {
 
   factory HeadTurnDetectionThreshold.fromMap(Map<String, dynamic> map) {
     return HeadTurnDetectionThreshold(
-      rotationAngle: map['rotationAngle']?.toDouble() ?? 0.0,
+      // Default to the class default (45.0): 0.0 would trip the
+      // `rotationAngle > 0.0` assert when the key is absent.
+      rotationAngle: map['rotationAngle']?.toDouble() ?? 45.0,
     );
   }
 
@@ -224,7 +230,8 @@ class HeadTurnDetectionThreshold extends DetectionThreshold {
   @override
   DetectionThreshold fromDict(Map<String, dynamic> map) {
     return HeadTurnDetectionThreshold(
-      rotationAngle: map['rotationAngle']?.toDouble() ?? 0.0,
+      // Default to 45.0; 0.0 would trip the `rotationAngle > 0.0` assert.
+      rotationAngle: map['rotationAngle']?.toDouble() ?? 45.0,
     );
   }
 }

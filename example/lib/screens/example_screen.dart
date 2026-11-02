@@ -44,33 +44,15 @@ class _ExampleScreenState extends State<ExampleScreen> {
       [
         LivelynessStepItem(
           step: LivelynessStep.blink,
-          title: "Blink",
+          title: "Blink your eyes",
           isCompleted: false,
           detectionColor: Colors.amber,
         ),
         LivelynessStepItem(
           step: LivelynessStep.smile,
-          title: "Smile",
+          title: "Give us a smile",
           isCompleted: false,
           detectionColor: Colors.green.shade800,
-        ),
-      ],
-    );
-    LivelynessDetection.instance.configure(
-      lineColor: Colors.white,
-      dotColor: Colors.purple.shade800,
-      dotSize: 2.0,
-      lineWidth: 2,
-      dashValues: [2.0, 5.0],
-      displayDots: false,
-      displayLines: true,
-      thresholds: [
-        SmileDetectionThreshold(
-          probability: 0.8,
-        ),
-        BlinkDetectionThreshold(
-          leftEyeProbability: 0.25,
-          rightEyeProbability: 0.25,
         ),
       ],
     );
@@ -78,9 +60,8 @@ class _ExampleScreenState extends State<ExampleScreen> {
 
   void _onStartLivelyness() async {
     setState(() => _capturedImagePath = null);
-    final CapturedImage? response =
-        await LivelynessDetection.instance.detectLivelyness(
-      context,
+    final CapturedImage? response = await LivelynessDetection.detect(
+      context: context,
       config: DetectionConfig(
         steps: _veificationSteps,
         startWithInfoScreen: _startWithInfo,
@@ -88,6 +69,19 @@ class _ExampleScreenState extends State<ExampleScreen> {
         maxSecToDetect: _timeOutDuration == 100 ? 2500 : _timeOutDuration,
         allowAfterMaxSec: _allowAfterTimeOut,
         captureButtonColor: Colors.red,
+        thresholds: [
+          SmileDetectionThreshold(probability: 0.8),
+          BlinkDetectionThreshold(
+            leftEyeProbability: 0.25,
+            rightEyeProbability: 0.25,
+          ),
+        ],
+        contourLineColor: Colors.white,
+        contourDotColor: Colors.purple.shade800,
+        contourLineWidth: 2,
+        dashValues: const [2.0, 5.0],
+        displayDots: false,
+        displayLines: true,
       ),
     );
     if (response == null) {

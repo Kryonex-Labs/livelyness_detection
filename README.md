@@ -79,10 +79,11 @@ Next comes the native setup on both android and iOS
 
 ```xml
   <key>NSCameraUsageDescription</key>
-  <string>Camera Access for Scanning</string>
-  <key>NSMicrophoneUsageDescription</key>
-  <string>Microphone for playing instructions audio.</string>
+  <string>Used to verify you are a live person.</string>
 ```
+
+> The camera runs with audio disabled, so no `NSMicrophoneUsageDescription` is
+> required. Use a purpose-specific string: App Review rejects vague copy.
 
 4. Open the `ios/Runner/Podfile` and uncomment the second line.
 
@@ -102,7 +103,37 @@ platform :ios, '14.0' # <---------- Uncomment this line
   
   #### Android Setup
   1. Open the `example/android/app/build.gradle` file and set the `minSdkVersion` as `21`.
+  2. Add the camera permission to `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+  <uses-permission android:name="android.permission.CAMERA" />
+```
 </details>
+
+<a name="privacy"></a>
+
+## Privacy & biometric data
+
+A captured face is **biometric data**. Depending on your users it may be
+regulated as a special category of personal data (GDPR Art. 9) or under
+biometric privacy laws such as BIPA. Treat it accordingly.
+
+What this package does and does not do:
+
+- It performs **no network I/O** and keeps **no persistent storage** beyond a
+  single unencrypted JPEG written to the app's temporary directory by the
+  camera plugin.
+- It returns that file's path in [`CapturedImage`]. You (the app) are the data
+  controller/processor: obtain explicit consent before launching detection.
+- **Delete the file as soon as you are done** with it (e.g. after uploading for
+  verification) via `await capturedImage.delete()`. The package does not delete
+  it for you on the return path.
+- Do **not** log `CapturedImage` naively — its `toString()` redacts the path,
+  but `imgPath`/`toJson()` still expose it, so never pass those to a logger.
+- `completedSteps` and the auto-capture result are **client-side liveness
+  signals only**; they are not tamper-proof. Perform **server-side
+  verification** for any fraud / authentication decision.
+
 
 <a name="codeExample"></a>
 
