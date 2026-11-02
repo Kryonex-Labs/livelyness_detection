@@ -647,19 +647,6 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
       fit: StackFit.expand,
       children: [
         _buildFullBleedPreview(controller),
-        if (widget.config.showFacialVertices)
-          ValueListenableBuilder<_FaceOverlay?>(
-            valueListenable: _faceNotifier,
-            builder: (_, data, __) {
-              if (data == null) return const SizedBox.shrink();
-              return FaceVerticesOverlay(
-                face: data.$1,
-                imageSize: data.$2,
-                rotation: data.$3,
-                config: widget.config,
-              );
-            },
-          ),
         // Frosted surroundings outside the oval.
         ClipPath(
           clipper: InvertedOvalClipper(config: widget.config.ovalConfig),
@@ -691,15 +678,39 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
   Widget _buildFullBleedPreview(CameraController controller) {
     final previewSize = controller.value.previewSize;
     if (previewSize == null) return const SizedBox.shrink();
+    // previewSize is in landscape coordinates; swap for portrait.
+    final portraitW = previewSize.height;
+    final portraitH = previewSize.width;
     return ClipRect(
       child: SizedBox.expand(
         child: FittedBox(
           fit: BoxFit.cover,
+          // The overlay MUST live inside this FittedBox so it shares the same
+          // scale/crop transform as the camera preview. Painting it in a
+          // separate full-screen layer causes the vertices to drift because
+          // BoxFit.cover scales+crops the preview.
           child: SizedBox(
-            // previewSize is in landscape coordinates; swap for portrait.
-            width: previewSize.height,
-            height: previewSize.width,
-            child: CameraPreview(controller),
+            width: portraitW,
+            height: portraitH,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CameraPreview(controller),
+                if (widget.config.showFacialVertices)
+                  ValueListenableBuilder<_FaceOverlay?>(
+                    valueListenable: _faceNotifier,
+                    builder: (_, data, __) {
+                      if (data == null) return const SizedBox.shrink();
+                      return FaceVerticesOverlay(
+                        face: data.$1,
+                        imageSize: data.$2,
+                        rotation: data.$3,
+                        config: widget.config,
+                      );
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       ),
