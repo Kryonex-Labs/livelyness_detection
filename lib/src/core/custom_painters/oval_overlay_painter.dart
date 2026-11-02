@@ -5,31 +5,37 @@ import 'package:livelyness_detection/index.dart';
 /// Computes the centered oval face-guide rect for a given canvas [size].
 ///
 /// Both the scrim painter and the frosted-backdrop clipper use this so the
-/// cutout and the blur stay perfectly aligned.
-Rect livelynessOvalRect(Size size) {
-  final double width = size.width * 0.72;
-  final double height = width * 1.32;
+/// cutout and the blur stay perfectly aligned. Geometry is driven by [config].
+Rect livelynessOvalRect(Size size, OvalConfig config) {
+  final double width = size.width * config.widthFraction;
+  final double height = width * config.aspectRatio;
   final double left = (size.width - width) / 2;
   // Sit the oval slightly above the vertical center to leave room for the
   // instruction card at the bottom.
-  final double top = (size.height - height) / 2 - size.height * 0.06;
+  final double top =
+      (size.height - height) / 2 + size.height * config.verticalOffsetFraction;
   return Rect.fromLTWH(left, top, width, height);
 }
 
 /// Clips to everything *outside* the oval guide, so a [BackdropFilter] wrapped
 /// in a [ClipPath] frosts the surroundings while leaving the face crisp.
 class InvertedOvalClipper extends CustomClipper<Path> {
+  final OvalConfig config;
+
+  const InvertedOvalClipper({this.config = const OvalConfig()});
+
   @override
   Path getClip(Size size) {
     return Path.combine(
       PathOperation.difference,
       Path()..addRect(Offset.zero & size),
-      Path()..addOval(livelynessOvalRect(size)),
+      Path()..addOval(livelynessOvalRect(size, config)),
     );
   }
 
   @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+  bool shouldReclip(covariant InvertedOvalClipper oldClipper) =>
+      oldClipper.config != config;
 }
 
 /// Paints the dark scrim with an oval cutout plus the animated progress ring
@@ -46,20 +52,20 @@ class OvalOverlayPainter extends CustomPainter {
   /// Color of the filled portion of the ring.
   final Color progressColor;
 
-  /// Color of the unfilled ring track.
-  final Color trackColor;
+  /// Oval geometry plus ring stroke/padding/track styling.
+  final OvalConfig config;
 
   OvalOverlayPainter({
     required this.progress,
     required this.overlayColor,
     required this.progressColor,
-    this.trackColor = const Color(0x33FFFFFF),
+    this.config = const OvalConfig(),
   }) : super(repaint: progress);
 
   @override
   void paint(Canvas canvas, Size size) {
     final double value = progress.value;
-    final Rect oval = livelynessOvalRect(size);
+    final Rect oval = livelynessOvalRect(size, config);
 
     // Dark scrim everywhere except the oval (even-odd punches the hole).
     final Path scrim = Path()
@@ -69,15 +75,15 @@ class OvalOverlayPainter extends CustomPainter {
     canvas.drawPath(scrim, Paint()..color = overlayColor);
 
     // Ring is drawn just outside the oval edge.
-    final Rect ringRect = oval.inflate(6);
-    final double stroke = 5.0;
+    final Rect ringRect = oval.inflate(config.ringPadding);
+    final double stroke = config.ringStrokeWidth;
 
     canvas.drawOval(
       ringRect,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
-        ..color = trackColor,
+        ..color = config.ringTrackColor,
     );
 
     if (value > 0) {
@@ -102,6 +108,6 @@ class OvalOverlayPainter extends CustomPainter {
     return oldDelegate.progress != progress ||
         oldDelegate.overlayColor != overlayColor ||
         oldDelegate.progressColor != progressColor ||
-        oldDelegate.trackColor != trackColor;
+        oldDelegate.config != config;
   }
 }

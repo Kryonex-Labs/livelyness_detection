@@ -47,11 +47,12 @@ abstract final class LivelynessDetection {
     if (_isActive) return null;
     _isActive = true;
     try {
-      return await Navigator.of(context).push<CapturedImage?>(
-        MaterialPageRoute(
-          builder: (_) => LivelynessDetectionScreen(config: config),
-        ),
-      );
+      final Route<CapturedImage?> route = config.routeBuilder
+              ?.call(LivelynessDetectionScreen(config: config)) ??
+          MaterialPageRoute(
+            builder: (_) => LivelynessDetectionScreen(config: config),
+          );
+      return await Navigator.of(context).push<CapturedImage?>(route);
     } finally {
       _isActive = false;
     }

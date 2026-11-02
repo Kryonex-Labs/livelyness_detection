@@ -9,9 +9,11 @@ import 'package:livelyness_detection/index.dart';
 /// cards and a gradient "Begin Verification" button.
 class LivelynessInfoWidget extends StatelessWidget {
   final VoidCallback onStartTap;
+  final InfoScreenConfig config;
 
   const LivelynessInfoWidget({
     required this.onStartTap,
+    this.config = const InfoScreenConfig(),
     super.key,
   });
 
@@ -19,11 +21,11 @@ class LivelynessInfoWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final padding = MediaQuery.of(context).padding;
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF14161B), Color(0xFF1F2330)],
+          colors: config.backgroundGradient,
         ),
       ),
       child: Padding(
@@ -38,7 +40,7 @@ class LivelynessInfoWidget extends StatelessWidget {
           children: [
             const SizedBox(height: 24),
             Text(
-              StringConstants.label.livelyNessDetection,
+              config.title,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
@@ -48,7 +50,7 @@ class LivelynessInfoWidget extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              StringConstants.label.infoSubText,
+              config.subtitle,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Color(0xFFB8BDC9),
@@ -60,25 +62,26 @@ class LivelynessInfoWidget extends StatelessWidget {
             Expanded(
               child: Center(
                 child: Lottie.asset(
-                  AssetConstants.lottie.livelynessStart,
-                  package: AssetConstants.packageName,
+                  config.lottieAsset ?? AssetConstants.lottie.livelynessStart,
+                  package: config.lottieAsset == null
+                      ? AssetConstants.packageName
+                      : (config.lottieFromPackage
+                          ? AssetConstants.packageName
+                          : null),
                   animate: true,
                   repeat: true,
                   fit: BoxFit.contain,
                 ),
               ),
             ),
-            _buildGuidanceCard(
-              icon: Icons.wb_sunny_outlined,
-              title: StringConstants.label.goodLighting,
-              subTitle: StringConstants.label.goodLightingSubText,
-            ),
-            const SizedBox(height: 14),
-            _buildGuidanceCard(
-              icon: Icons.center_focus_strong_outlined,
-              title: StringConstants.label.lookStraight,
-              subTitle: StringConstants.label.lookStraightSubText,
-            ),
+            for (int i = 0; i < config.guidanceItems.length; i++) ...[
+              if (i > 0) const SizedBox(height: 14),
+              _buildGuidanceCard(
+                icon: config.guidanceItems[i].icon,
+                title: config.guidanceItems[i].title,
+                subTitle: config.guidanceItems[i].description,
+              ),
+            ],
             const SizedBox(height: 28),
             _buildStartButton(),
           ],
@@ -151,14 +154,15 @@ class LivelynessInfoWidget extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4CD964), Color(0xFF2EA6FF)],
+        gradient: LinearGradient(
+          colors: config.buttonGradient,
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x332EA6FF),
+            // Derived from the button gradient so a custom gradient is honored.
+            color: config.buttonGradient.last.withValues(alpha: 0.2),
             blurRadius: 18,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -171,7 +175,7 @@ class LivelynessInfoWidget extends StatelessWidget {
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
-              StringConstants.button.start,
+              config.buttonText,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,

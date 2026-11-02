@@ -68,6 +68,13 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
   Timer? _timerToDetectFace;
   bool _isCaptureButtonVisible = false;
 
+  // Monotonic clock + timestamp of the last frame actually handed to the
+  // detector, used to throttle processing to cameraConfig.maxDetectionFps.
+  // A Stopwatch is used instead of DateTime.now() so a backward wall-clock
+  // jump cannot freeze processing permanently.
+  final Stopwatch _frameClock = Stopwatch()..start();
+  int _lastProcessedMs = 0;
+
   // Latest detected face for the optional vertices overlay. Only updated when
   // showFacialVertices is true, so there is no per-frame setState otherwise.
   final ValueNotifier<_FaceOverlay?> _faceNotifier = ValueNotifier(null);
@@ -167,14 +174,13 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
       return;
     }
     if (!mounted || _disposed) return;
+    final preferredLens = widget.config.cameraConfig.preferredLens;
     final frontUpright = _cameras.firstWhereOrNull(
-      (e) =>
-          e.lensDirection == CameraLensDirection.front &&
-          e.sensorOrientation == 90,
+      (e) => e.lensDirection == preferredLens && e.sensorOrientation == 90,
     );
     final front = frontUpright ??
         _cameras.firstWhereOrNull(
-          (e) => e.lensDirection == CameraLensDirection.front,
+          (e) => e.lensDirection == preferredLens,
         );
     if (front == null) {
       _failAndPop();
@@ -205,7 +211,7 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
       // never sees a half-initialized controller or clobbers the live one.
       final controller = CameraController(
         _cameras[_cameraIndex],
-        ResolutionPreset.high,
+        widget.config.cameraConfig.resolution,
         enableAudio: false,
         imageFormatGroup: defaultTargetPlatform == TargetPlatform.android
             ? ImageFormatGroup.nv21
@@ -257,6 +263,8 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
       () {
         _timerToDetectFace?.cancel();
         _timerToDetectFace = null;
+        final onTimeout = widget.config.onTimeout;
+        if (onTimeout != null) _safeInvoke('onTimeout', onTimeout);
         if (widget.config.allowAfterMaxSec) {
           if (mounted) setState(() => _isCaptureButtonVisible = true);
           return;
@@ -275,6 +283,20 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
   //* MARK: - Image processing (ML Kit)
   //? =========================================================
   Future<void> _processCameraImage(CameraImage cameraImage) async {
+    // Throttle to maxDetectionFps: skip the frame if too little time has
+    // elapsed since the last processed one. Lower FPS = less CPU/battery.
+    final int fps = widget.config.cameraConfig.maxDetectionFps;
+    // fps <= 0 disables throttling; fps >= 30 (the default) is treated as
+    // unthrottled so the default config processes every frame exactly as it
+    // did before this throttle existed. For the mid-range we subtract a small
+    // tolerance from the interval so ordinary frame-arrival jitter does not
+    // drop otherwise-eligible frames.
+    if (fps > 0 && fps < 30) {
+      final int nowMs = _frameClock.elapsedMilliseconds;
+      final int minIntervalMs = (1000 / fps).floor() - 5;
+      if (minIntervalMs > 0 && nowMs - _lastProcessedMs < minIntervalMs) return;
+      _lastProcessedMs = nowMs;
+    }
     final inputImage = _inputImageFromCamera(cameraImage);
     if (inputImage == null) return;
     await _processImage(inputImage);
@@ -336,6 +358,12 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
 
       if (metadata != null && faces.isNotEmpty) {
         final Face firstFace = faces.first;
+        // Guarded so a throw from the consumer cannot skip step detection for
+        // this frame; also suppressed once completion/transition has begun.
+        final onFaceDetected = widget.config.onFaceDetected;
+        if (onFaceDetected != null && !_isCompleted && !_transitioning) {
+          _safeInvoke('onFaceDetected', () => onFaceDetected(firstFace));
+        }
         if (widget.config.showFacialVertices) {
           _faceNotifier.value = (firstFace, metadata.size, metadata.rotation);
         }
@@ -414,6 +442,14 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
     if (idx < 0 || _steps[idx].isCompleted) return;
     _steps[idx] = _steps[idx].copyWith(isCompleted: true);
     _didCloseEyes = false;
+    final int completedCount = _steps.where((s) => s.isCompleted).length;
+    final onStepCompleted = widget.config.onStepCompleted;
+    if (onStepCompleted != null) {
+      _safeInvoke(
+        'onStepCompleted',
+        () => onStepCompleted(step, completedCount, _steps.length),
+      );
+    }
     if (mounted) setState(() {});
     await _advance();
   }
@@ -534,18 +570,37 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
     if (!mounted) return;
     _isCompleted = true;
     final String imgPath = imgToReturn?.path ?? "";
-    if (imgPath.isEmpty || didCaptureAutomatically == null) {
-      Navigator.of(context).pop(null);
-      return;
+    final CapturedImage? result = (imgPath.isEmpty ||
+            didCaptureAutomatically == null)
+        ? null
+        : CapturedImage(
+            imgPath: imgPath,
+            didCaptureAutomatically: didCaptureAutomatically,
+            completedSteps: completedSteps ??
+                _steps.where((s) => s.isCompleted).map((s) => s.step).toList(),
+          );
+    // onComplete runs guarded so a throw from the consumer can never stop the
+    // route from popping (which would leave the screen stuck and detect() hung).
+    final onComplete = widget.config.onComplete;
+    if (onComplete != null) {
+      _safeInvoke('onComplete', () => onComplete(result));
     }
-    Navigator.of(context).pop(
-      CapturedImage(
-        imgPath: imgPath,
-        didCaptureAutomatically: didCaptureAutomatically,
-        completedSteps: completedSteps ??
-            _steps.where((s) => s.isCompleted).map((s) => s.step).toList(),
-      ),
-    );
+    Navigator.of(context).pop(result);
+  }
+
+  /// Invokes a consumer-supplied callback so a throw inside it is reported but
+  /// never rethrown into the liveness flow (which could break or hang it).
+  void _safeInvoke(String name, void Function() body) {
+    try {
+      body();
+    } catch (e, s) {
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: e,
+        stack: s,
+        library: 'livelyness_detection',
+        context: ErrorDescription('while calling DetectionConfig.$name'),
+      ));
+    }
   }
 
   //* MARK: - UI
@@ -560,6 +615,7 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
           _isInfoStepCompleted
               ? _buildDetectionBody()
               : LivelynessInfoWidget(
+                  config: widget.config.infoScreenConfig,
                   onStartTap: () {
                     setState(() => _isInfoStepCompleted = true);
                     _startLiveFeed();
@@ -606,9 +662,12 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
           ),
         // Frosted surroundings outside the oval.
         ClipPath(
-          clipper: InvertedOvalClipper(),
+          clipper: InvertedOvalClipper(config: widget.config.ovalConfig),
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            filter: ui.ImageFilter.blur(
+              sigmaX: widget.config.ovalConfig.blurSigma,
+              sigmaY: widget.config.ovalConfig.blurSigma,
+            ),
             child: const SizedBox.expand(),
           ),
         ),
@@ -619,6 +678,7 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
             progress: _ringController,
             overlayColor: widget.config.overlayColor,
             progressColor: widget.config.progressColor,
+            config: widget.config.ovalConfig,
           ),
         ),
         if (_showCheck) _buildCheck(),
