@@ -12,10 +12,15 @@ class CapturedImage {
   /// The liveness steps that were successfully verified before capture.
   final List<LivelynessStep> completedSteps;
 
+  /// Passive anti-spoofing (PAD) result for this capture, when PAD is enabled.
+  /// `null` when PAD is disabled.
+  final PadResult? padResult;
+
   CapturedImage({
     required this.imgPath,
     required this.didCaptureAutomatically,
     this.completedSteps = const [],
+    this.padResult,
   });
 
   /// Deletes the captured selfie file from disk.
@@ -43,12 +48,14 @@ class CapturedImage {
     String? imgPath,
     bool? didCaptureAutomatically,
     List<LivelynessStep>? completedSteps,
+    PadResult? padResult,
   }) {
     return CapturedImage(
       imgPath: imgPath ?? this.imgPath,
       didCaptureAutomatically:
           didCaptureAutomatically ?? this.didCaptureAutomatically,
       completedSteps: completedSteps ?? this.completedSteps,
+      padResult: padResult ?? this.padResult,
     );
   }
 
@@ -57,6 +64,7 @@ class CapturedImage {
       'imgPath': imgPath,
       'didCaptureAutomatically': didCaptureAutomatically,
       'completedSteps': completedSteps.map((e) => e.index).toList(),
+      if (padResult != null) 'padResult': padResult!.toMap(),
     };
   }
 
@@ -70,6 +78,9 @@ class CapturedImage {
               : null)
           .whereType<LivelynessStep>()
           .toList(),
+      padResult: map['padResult'] == null
+          ? null
+          : PadResult.fromMap(Map<String, dynamic>.from(map['padResult'])),
     );
   }
 
@@ -79,10 +90,12 @@ class CapturedImage {
       CapturedImage.fromMap(json.decode(source));
 
   // Path is deliberately redacted: it points at an unencrypted biometric JPEG
-  // and must not leak into logs. Use [imgPath] directly when you need it.
+  // and must not leak into logs. Use [imgPath] directly when you need it. The
+  // PAD result is reduced to its verdict for the same reason — the raw variance
+  // signals are behavioral biometrics and must not leak into logs.
   @override
   String toString() =>
-      'CapturedImage(imgPath: <redacted>, didCaptureAutomatically: $didCaptureAutomatically, completedSteps: $completedSteps)';
+      'CapturedImage(imgPath: <redacted>, didCaptureAutomatically: $didCaptureAutomatically, completedSteps: $completedSteps, padResult: ${padResult?.verdict})';
 
   @override
   bool operator ==(Object other) {
@@ -90,9 +103,11 @@ class CapturedImage {
 
     return other is CapturedImage &&
         other.imgPath == imgPath &&
-        other.didCaptureAutomatically == didCaptureAutomatically;
+        other.didCaptureAutomatically == didCaptureAutomatically &&
+        other.padResult == padResult;
   }
 
   @override
-  int get hashCode => imgPath.hashCode ^ didCaptureAutomatically.hashCode;
+  int get hashCode =>
+      imgPath.hashCode ^ didCaptureAutomatically.hashCode ^ padResult.hashCode;
 }

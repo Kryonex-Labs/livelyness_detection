@@ -1,3 +1,19 @@
+## 2.1.0
+
+### New features
+
+- **Passive anti-spoofing (PAD), Phase 1**: heuristic liveness check that runs alongside the active challenges to catch flat printed-photo spoofs. It watches the involuntary micro-movements every real face has — head euler X/Y drift, eye-open-probability jitter and bounding-box wobble — across a sliding frame window and flags a face with near-zero variance as a spoof. Uses existing ML Kit signals only; **zero new dependencies**, no TFLite, no platform channels.
+- **`PadConfig`**: enable/disable PAD, window size (default 45 frames ≈ 1.5s at 30fps), per-signal variance thresholds, how many signals must pass (default 3 of 4), `blockOnSpoof` (default `true`), `blockOnInconclusive` (default `false`) and an `onPadResult` callback. Wired into `DetectionConfig.padConfig` (defaults to `PadConfig()`, so PAD is on by default).
+- **`PadResult`** + **`PadVerdict`** (`live` / `spoof` / `inconclusive`): the verdict plus every underlying signal value for logging/tuning. Now attached to `CapturedImage.padResult`.
+- Privacy: the analyzer stores only extracted scalar doubles, never the biometric `Face` object. `PadResult.toString()` and `CapturedImage.toString()` print only the verdict — the raw variance signals are behavioral biometrics and are kept out of logs.
+
+### Security & limitations — read before relying on PAD
+
+- **Fails open by default.** An `inconclusive` verdict (the frame window never filled) passes capture unless you set `blockOnInconclusive: true`. The default preserves the fail-open posture so slow devices are not rejected.
+- **Hand-motion bypass.** A hand-held printed photo introduces enough jitter to pass Phase 1. Phase 1 reliably catches only **flat, still** printed photos — it is **not a standalone security gate**.
+- **Client-side and unauthenticated.** `PadResult` is produced on-device and is not signed or attested. Do **not** treat it as server-side proof of liveness; the server / downstream must independently re-verify the capture.
+- Phase 1 detects flat printed photos only. Screen replays and 3D masks are out of scope (planned for a later TFLite-based phase).
+
 ## 2.0.1
 
 ### Docs

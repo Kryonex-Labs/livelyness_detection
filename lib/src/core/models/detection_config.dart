@@ -101,6 +101,10 @@ class DetectionConfig {
   /// Camera resolution, lens and detection-rate tunables.
   final CameraConfig cameraConfig;
 
+  /// Phase 1 passive anti-spoofing (PAD) tunables. Enabled by default; set
+  /// `padConfig: PadConfig(enabled: false)` to turn it off.
+  final PadConfig padConfig;
+
   /// Called after a step is marked complete, with the completed step, the
   /// number of steps completed so far and the total step count.
   final void Function(LivelynessStep step, int completedCount, int totalSteps)?
@@ -150,12 +154,13 @@ class DetectionConfig {
     this.infoScreenConfig = const InfoScreenConfig(),
     this.ovalConfig = const OvalConfig(),
     this.cameraConfig = const CameraConfig(),
+    PadConfig? padConfig,
     this.onStepCompleted,
     this.onFaceDetected,
     this.onTimeout,
     this.onComplete,
     this.routeBuilder,
-  }) {
+  }) : padConfig = padConfig ?? PadConfig() {
     // Runtime guards (asserts are stripped in release builds).
     if (steps.isEmpty) {
       throw ArgumentError.value(
