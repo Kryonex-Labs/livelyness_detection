@@ -6,3 +6,5 @@ export 'detection_threshold.dart';
 export 'info_screen_config.dart';
 export 'livelyness_step_item.dart';
 export 'oval_config.dart';
+export 'pad_config.dart';
+export 'pad_result.dart';

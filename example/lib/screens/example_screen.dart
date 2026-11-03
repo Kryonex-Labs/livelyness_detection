@@ -96,7 +96,8 @@ class _ExampleScreenState extends State<ExampleScreen> {
   void _log(String msg) {
     if (!_callbacksEnabled) return;
     setState(() {
-      _eventLog.insert(0, '${DateTime.now().toString().substring(11, 19)} $msg');
+      _eventLog.insert(
+          0, '${DateTime.now().toString().substring(11, 19)} $msg');
       if (_eventLog.length > 20) _eventLog.removeLast();
     });
   }
@@ -167,7 +168,8 @@ class _ExampleScreenState extends State<ExampleScreen> {
                   position: Tween(
                     begin: const Offset(0, 1),
                     end: Offset.zero,
-                  ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+                  ).animate(CurvedAnimation(
+                      parent: anim, curve: Curves.easeOutCubic)),
                   child: child,
                 ),
                 transitionDuration: const Duration(milliseconds: 400),
@@ -184,8 +186,8 @@ class _ExampleScreenState extends State<ExampleScreen> {
       onTimeout: _callbacksEnabled ? () => _log('⏱ Timeout') : null,
       onComplete: _callbacksEnabled
           ? (result) => _log(
-              result != null ? '📸 Captured' : '✕ Cancelled',
-            )
+                result != null ? '📸 Captured' : '✕ Cancelled',
+              )
           : null,
     );
 
@@ -386,8 +388,7 @@ class _ExampleScreenState extends State<ExampleScreen> {
                           color: _accent.withValues(alpha: 0.08),
                         ),
                         child: Icon(Icons.person_outline_rounded,
-                            size: 40,
-                            color: _accent.withValues(alpha: 0.5)),
+                            size: 40, color: _accent.withValues(alpha: 0.5)),
                       ),
                       const SizedBox(height: 12),
                       const Text('No capture yet',
@@ -542,11 +543,10 @@ class _ExampleScreenState extends State<ExampleScreen> {
 
   Widget _buildInfoScreenSettings() {
     return Column(children: [
-      _textFieldRow('Title', _infoTitle,
-          (v) => setState(() => _infoTitle = v)),
+      _textFieldRow('Title', _infoTitle, (v) => setState(() => _infoTitle = v)),
       _divider(),
-      _textFieldRow('Subtitle', _infoSubtitle,
-          (v) => setState(() => _infoSubtitle = v)),
+      _textFieldRow(
+          'Subtitle', _infoSubtitle, (v) => setState(() => _infoSubtitle = v)),
       _divider(),
       _textFieldRow('Button text', _infoButtonText,
           (v) => setState(() => _infoButtonText = v)),
@@ -554,14 +554,14 @@ class _ExampleScreenState extends State<ExampleScreen> {
       _colorRow('Background start', _infoBgStart,
           (c) => setState(() => _infoBgStart = c)),
       _divider(),
-      _colorRow('Background end', _infoBgEnd,
-          (c) => setState(() => _infoBgEnd = c)),
+      _colorRow(
+          'Background end', _infoBgEnd, (c) => setState(() => _infoBgEnd = c)),
       _divider(),
       _colorRow('Button start', _infoBtnStart,
           (c) => setState(() => _infoBtnStart = c)),
       _divider(),
-      _colorRow('Button end', _infoBtnEnd,
-          (c) => setState(() => _infoBtnEnd = c)),
+      _colorRow(
+          'Button end', _infoBtnEnd, (c) => setState(() => _infoBtnEnd = c)),
     ]);
   }
 
@@ -569,28 +569,64 @@ class _ExampleScreenState extends State<ExampleScreen> {
 
   Widget _buildOvalSettings() {
     return Column(children: [
-      _sliderRow('Width', 'Fraction of screen width',
-          _ovalWidth.toStringAsFixed(2), _ovalWidth, 0.4, 0.95, 11,
+      _sliderRow(
+          'Width',
+          'Fraction of screen width',
+          _ovalWidth.toStringAsFixed(2),
+          _ovalWidth,
+          0.4,
+          0.95,
+          11,
           (v) => setState(() => _ovalWidth = v)),
       _divider(),
-      _sliderRow('Aspect ratio', 'Height multiplier',
-          _ovalAspect.toStringAsFixed(2), _ovalAspect, 1.0, 1.8, 8,
+      _sliderRow(
+          'Aspect ratio',
+          'Height multiplier',
+          _ovalAspect.toStringAsFixed(2),
+          _ovalAspect,
+          1.0,
+          1.8,
+          8,
           (v) => setState(() => _ovalAspect = v)),
       _divider(),
-      _sliderRow('Vertical offset', 'Shift up/down',
-          _ovalOffset.toStringAsFixed(2), _ovalOffset, -0.15, 0.1, 25,
+      _sliderRow(
+          'Vertical offset',
+          'Shift up/down',
+          _ovalOffset.toStringAsFixed(2),
+          _ovalOffset,
+          -0.15,
+          0.1,
+          25,
           (v) => setState(() => _ovalOffset = v)),
       _divider(),
-      _sliderRow('Blur sigma', 'Frosted glass intensity',
-          _blurSigma.toStringAsFixed(0), _blurSigma, 0, 30, 30,
+      _sliderRow(
+          'Blur sigma',
+          'Frosted glass intensity',
+          _blurSigma.toStringAsFixed(0),
+          _blurSigma,
+          0,
+          30,
+          30,
           (v) => setState(() => _blurSigma = v)),
       _divider(),
-      _sliderRow('Ring stroke', 'Progress ring thickness',
-          _ringStroke.toStringAsFixed(1), _ringStroke, 1, 12, 22,
+      _sliderRow(
+          'Ring stroke',
+          'Progress ring thickness',
+          _ringStroke.toStringAsFixed(1),
+          _ringStroke,
+          1,
+          12,
+          22,
           (v) => setState(() => _ringStroke = v)),
       _divider(),
-      _sliderRow('Ring padding', 'Gap between oval and ring',
-          _ringPadding.toStringAsFixed(0), _ringPadding, 0, 20, 20,
+      _sliderRow(
+          'Ring padding',
+          'Gap between oval and ring',
+          _ringPadding.toStringAsFixed(0),
+          _ringPadding,
+          0,
+          20,
+          20,
           (v) => setState(() => _ringPadding = v)),
       _divider(),
       _colorRow('Ring track', _ringTrackColor,
@@ -610,8 +646,14 @@ class _ExampleScreenState extends State<ExampleScreen> {
         (v) => setState(() => _resolution = v),
       ),
       _divider(),
-      _sliderRow('Max FPS', 'Detection frame rate',
-          _maxFps >= 30 ? 'Max' : '$_maxFps', _maxFps.toDouble(), 5, 30, 5,
+      _sliderRow(
+          'Max FPS',
+          'Detection frame rate',
+          _maxFps >= 30 ? 'Max' : '$_maxFps',
+          _maxFps.toDouble(),
+          5,
+          30,
+          5,
           (v) => setState(() => _maxFps = v.round())),
     ]);
   }
@@ -632,12 +674,24 @@ class _ExampleScreenState extends State<ExampleScreen> {
       _colorRow('Contour dots', _contourDotColor,
           (c) => setState(() => _contourDotColor = c)),
       _divider(),
-      _sliderRow('Line width', '', _contourLineWidth.toStringAsFixed(1),
-          _contourLineWidth, 0.5, 5, 9,
+      _sliderRow(
+          'Line width',
+          '',
+          _contourLineWidth.toStringAsFixed(1),
+          _contourLineWidth,
+          0.5,
+          5,
+          9,
           (v) => setState(() => _contourLineWidth = v)),
       _divider(),
-      _sliderRow('Dot radius', '', _contourDotRadius.toStringAsFixed(1),
-          _contourDotRadius, 1, 6, 10,
+      _sliderRow(
+          'Dot radius',
+          '',
+          _contourDotRadius.toStringAsFixed(1),
+          _contourDotRadius,
+          1,
+          6,
+          10,
           (v) => setState(() => _contourDotRadius = v)),
       _divider(),
       _switchRow('Draw lines', '', _displayLines,
@@ -656,8 +710,7 @@ class _ExampleScreenState extends State<ExampleScreen> {
           (v) => setState(() => _useSlideUpRoute = v)),
       _divider(),
       _switchRow('Callbacks', 'Log step/timeout/complete events',
-          _callbacksEnabled,
-          (v) => setState(() => _callbacksEnabled = v)),
+          _callbacksEnabled, (v) => setState(() => _callbacksEnabled = v)),
     ]);
   }
 
@@ -695,9 +748,7 @@ class _ExampleScreenState extends State<ExampleScreen> {
                               color: Color(0xFF8B8FA0),
                               fontSize: 11,
                               fontFamily: 'monospace',
-                              fontFeatures: [
-                                ui.FontFeature.tabularFigures()
-                              ])),
+                              fontFeatures: [ui.FontFeature.tabularFigures()])),
                     ))
                 .toList(),
           ),
@@ -715,8 +766,7 @@ class _ExampleScreenState extends State<ExampleScreen> {
           fontWeight: FontWeight.w600,
           letterSpacing: 1.2));
 
-  Widget _divider() =>
-      const Divider(color: _border, height: 1);
+  Widget _divider() => const Divider(color: _border, height: 1);
 
   Widget _switchRow(
       String title, String sub, bool value, ValueChanged<bool> onChanged) {
@@ -724,20 +774,18 @@ class _ExampleScreenState extends State<ExampleScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(children: [
         Expanded(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500)),
-                if (sub.isNotEmpty) ...[
-                  const SizedBox(height: 1),
-                  Text(sub,
-                      style: const TextStyle(color: _dimText, fontSize: 11)),
-                ],
-              ]),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500)),
+            if (sub.isNotEmpty) ...[
+              const SizedBox(height: 1),
+              Text(sub, style: const TextStyle(color: _dimText, fontSize: 11)),
+            ],
+          ]),
         ),
         SizedBox(
           height: 32,
@@ -756,21 +804,19 @@ class _ExampleScreenState extends State<ExampleScreen> {
         padding: const EdgeInsets.only(top: 6),
         child: Row(children: [
           Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500)),
-                  if (sub.isNotEmpty) ...[
-                    const SizedBox(height: 1),
-                    Text(sub,
-                        style:
-                            const TextStyle(color: _dimText, fontSize: 11)),
-                  ],
-                ]),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500)),
+              if (sub.isNotEmpty) ...[
+                const SizedBox(height: 1),
+                Text(sub,
+                    style: const TextStyle(color: _dimText, fontSize: 11)),
+              ],
+            ]),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -843,8 +889,7 @@ class _ExampleScreenState extends State<ExampleScreen> {
     );
   }
 
-  Widget _colorRow(
-      String label, Color current, ValueChanged<Color> onChanged) {
+  Widget _colorRow(String label, Color current, ValueChanged<Color> onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -893,20 +938,18 @@ class _ExampleScreenState extends State<ExampleScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(children: [
         Expanded(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500)),
-                if (sub.isNotEmpty) ...[
-                  const SizedBox(height: 1),
-                  Text(sub,
-                      style: const TextStyle(color: _dimText, fontSize: 11)),
-                ],
-              ]),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500)),
+            if (sub.isNotEmpty) ...[
+              const SizedBox(height: 1),
+              Text(sub, style: const TextStyle(color: _dimText, fontSize: 11)),
+            ],
+          ]),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10),

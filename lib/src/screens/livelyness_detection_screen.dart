@@ -41,6 +41,10 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
   // Per-screen detector; closed in dispose() to avoid a native leak.
   late final FaceDetector _faceDetector;
 
+  // Per-session passive anti-spoofing analyzer; null when PAD is disabled.
+  // Holds only extracted scalar signals, never a Face reference.
+  late final PassiveSpoofAnalyzer? _padAnalyzer;
+
   bool _isBusy = false;
   bool _didCloseEyes = false;
   bool _isTakingPicture = false;
@@ -109,6 +113,9 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
         performanceMode: FaceDetectorMode.accurate,
       ),
     );
+    _padAnalyzer = widget.config.padConfig.enabled
+        ? PassiveSpoofAnalyzer(widget.config.padConfig)
+        : null;
     _ringController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -367,10 +374,16 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
         if (widget.config.showFacialVertices) {
           _faceNotifier.value = (firstFace, metadata.size, metadata.rotation);
         }
+        // Feed the PAD analyzer the frame's scalar signals. The buffer is a
+        // sliding ring, so we keep feeding past window-full to keep the verdict
+        // anchored to the latest frames. Only extracted doubles are retained,
+        // never the Face.
+        _padAnalyzer?.addSample(firstFace);
         final LivelynessStep currentStep = _steps[_currentIndex].step;
         _detect(face: firstFace, step: currentStep);
       } else {
         if (widget.config.showFacialVertices) _faceNotifier.value = null;
+        _padAnalyzer?.reset();
         _resetSteps();
       }
     } catch (_) {
@@ -509,6 +522,33 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
     // racing the capture must not shrink what we report back.
     final List<LivelynessStep> completedSnapshot =
         _steps.where((s) => s.isCompleted).map((s) => s.step).toList();
+    // Passive anti-spoofing gate. Compute the verdict (inconclusive if the
+    // window never filled), notify the caller, and block the capture on a
+    // confirmed spoof when configured to.
+    PadResult? padResult;
+    final analyzer = _padAnalyzer;
+    if (analyzer != null) {
+      padResult = analyzer.isReady
+          ? analyzer.computeVerdict()
+          : PadResult.inconclusive();
+      final onPadResult = widget.config.padConfig.onPadResult;
+      final PadResult result = padResult;
+      if (onPadResult != null) {
+        _safeInvoke('onPadResult', () => onPadResult(result));
+      }
+      final padCfg = widget.config.padConfig;
+      final bool block =
+          (padResult.verdict == PadVerdict.spoof && padCfg.blockOnSpoof) ||
+              (padResult.verdict == PadVerdict.inconclusive &&
+                  padCfg.blockOnInconclusive);
+      if (block) {
+        // Flat/printed spoof (or a blocked inconclusive): reset the flow and
+        // keep the feed running so the user can retry. Do NOT capture.
+        _resetSteps();
+        analyzer.reset();
+        return;
+      }
+    }
     setState(() => _isTakingPicture = true);
     try {
       if (controller.value.isStreamingImages) {
@@ -527,6 +567,7 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
         imgToReturn: clickedImage,
         didCaptureAutomatically: didCaptureAutomatically,
         completedSteps: completedSnapshot,
+        padResult: padResult,
       );
     } on CameraException catch (_) {
       _captureRetries++;
@@ -555,6 +596,7 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
     XFile? imgToReturn,
     bool? didCaptureAutomatically,
     List<LivelynessStep>? completedSteps,
+    PadResult? padResult,
   }) {
     if (_isCompleted) {
       // Flow already finished (close button / timeout) while a takePicture was
@@ -578,6 +620,7 @@ class _LivelynessDetectionScreenState extends State<LivelynessDetectionScreen>
             didCaptureAutomatically: didCaptureAutomatically,
             completedSteps: completedSteps ??
                 _steps.where((s) => s.isCompleted).map((s) => s.step).toList(),
+            padResult: padResult,
           );
     // onComplete runs guarded so a throw from the consumer can never stop the
     // route from popping (which would leave the screen stuck and detect() hung).
